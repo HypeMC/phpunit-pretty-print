@@ -30,21 +30,36 @@ class Configuration
 
     public static function fromParameterCollection(ParameterCollection $parameters): self
     {
-        if (!$useProfiling = in_array('--profiling', $_SERVER['argv'], true)) {
-            $useProfiling = $parameters->has('displayProfiling') && !self::isFalsy($parameters->get('displayProfiling'));
-        }
-        if (!$useCompactMode = in_array('--compact', $_SERVER['argv'], true)) {
-            $useCompactMode = $parameters->has('useCompactMode') && !self::isFalsy($parameters->get('useCompactMode'));
-        }
-        if (!$displayQuote = in_array('--display-quote', $_SERVER['argv'], true)) {
-            $displayQuote = $parameters->has('displayQuote') && !self::isFalsy($parameters->get('displayQuote'));
-        }
+        $useProfiling = self::isEnabled('profiling', 'no-profiling', $parameters, 'displayProfiling');
+        $useCompactMode = self::isEnabled('compact', 'no-compact', $parameters, 'useCompactMode');
+        $displayQuote = self::isEnabled('display-quote', 'no-display-quote', $parameters, 'displayQuote');
 
         return new self(
             $useProfiling,
             $displayQuote,
             $useCompactMode,
         );
+    }
+
+    public static function isEnabled(
+        string $enabledOption,
+        string $disabledOption,
+        ParameterCollection $parameters,
+        string $parameter,
+        bool $default = false,
+    ): bool {
+        if (in_array('--'.$enabledOption, $_SERVER['argv'], true)) {
+            return true;
+        }
+        if (in_array('--'.$disabledOption, $_SERVER['argv'], true)) {
+            return false;
+        }
+
+        if ($parameters->has($parameter)) {
+            return !self::isFalsy($parameters->get($parameter));
+        }
+
+        return $default;
     }
 
     public static function isFalsy(mixed $value): bool
